@@ -81,7 +81,6 @@ See `SEASON_SETUP.md` for the season-rollover procedure and `DESIGN.md` §4 for 
 - **No API retry logic** by design — the API has been reliable; a failed run surfaces in the Actions log.
 - **Calendar reminders (24h + 1h popups) are hardcoded** in `create_calendar_event()`.
 - Use `datetime.now(timezone.utc)`, not the deprecated `datetime.utcnow()`.
-- **`FORCE_CALENDAR_SYNC` and `SEND_HEARTBEAT` secrets are injected but not yet consumed** by the script (reserved).
 
 ## Config plumbing
 

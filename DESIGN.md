@@ -118,13 +118,6 @@ Leave unset to use OzTag Australia defaults.
 | `TIMEZONE` | `Australia/Sydney` | IANA timezone string for match times and calendar events. |
 | `DEBUG_DATES` | (unset) | Set to `true` to run `debug_match_dates.py` and log raw API date values. |
 
-### 4.4 Optional -- GitHub Actions Secrets (reserved)
-
-| Secret | Status | Description |
-|--------|--------|-------------|
-| `FORCE_CALENDAR_SYNC` | Reserved | Injected into the environment but not yet consumed by the script. |
-| `SEND_HEARTBEAT` | Reserved | Injected into the environment but not yet consumed by the script. |
-
 ---
 
 ## 5. Design Decisions
@@ -241,7 +234,6 @@ window. GitHub Actions does not support timezone-aware cron natively.
 |-------|----------|-------|
 | DST shift in cron window | Low | 3-9 PM AEST instead of 4-10 PM AEDT. Within game-day range. |
 | No API retry logic | Low | API has been reliable in practice. |
-| `FORCE_CALENDAR_SYNC` / `SEND_HEARTBEAT` not consumed by script | Low | Reserved for future use. |
 | Cache eviction (7-day gap or 10 GB repo limit) | Low | Duplicate detection prevents double-booking on first run. |
 | `cleanup_duplicates.py` requires interactive terminal | Informational | By design -- see Section 5.7. |
 | Push-to-main trigger runs outside game-day hours | Informational | Useful during setup; remove if unwanted. |

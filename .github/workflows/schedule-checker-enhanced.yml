@@ -117,8 +117,6 @@ jobs:
         DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
         GOOGLE_CREDENTIALS_JSON: ${{ secrets.GOOGLE_CREDENTIALS_JSON }}
         GOOGLE_CALENDAR_ID: ${{ secrets.GOOGLE_CALENDAR_ID }}
-        FORCE_CALENDAR_SYNC: ${{ secrets.FORCE_CALENDAR_SYNC }}
-        SEND_HEARTBEAT: ${{ secrets.SEND_HEARTBEAT }}
         GITHUB_EVENT_NAME: ${{ github.event_name }}
         # ── Season configuration ──────────────────────────────────────────
         # Update these GitHub Variables (not Secrets) at the start of each
