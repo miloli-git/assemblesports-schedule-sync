@@ -1,0 +1,179 @@
+name: Oztag Schedule Checker with Calendar Sync
+
+on:
+  schedule:
+    # Hourly from 4 PM to 10 PM Sydney time on Thursday, Friday, Saturday, Sunday
+    # NOTE: Sydney timezone varies: AEDT (UTC+11) Oct-Apr, AEST (UTC+10) Apr-Oct
+    # These times are for AEDT: 4 PM = 5 AM UTC, 10 PM = 11 AM UTC
+    # During AEST, workflow will run 1 hour earlier (e.g., 3 PM instead of 4 PM Sydney time)
+    # Thursday
+    - cron: '0 5 * * 4'   # 4 PM Sydney
+    - cron: '0 6 * * 4'   # 5 PM Sydney
+    - cron: '0 7 * * 4'   # 6 PM Sydney
+    - cron: '0 8 * * 4'   # 7 PM Sydney
+    - cron: '0 9 * * 4'   # 8 PM Sydney
+    - cron: '0 10 * * 4'  # 9 PM Sydney
+    - cron: '0 11 * * 4'  # 10 PM Sydney
+    # Friday
+    - cron: '0 5 * * 5'   # 4 PM Sydney
+    - cron: '0 6 * * 5'   # 5 PM Sydney
+    - cron: '0 7 * * 5'   # 6 PM Sydney
+    - cron: '0 8 * * 5'   # 7 PM Sydney
+    - cron: '0 9 * * 5'   # 8 PM Sydney
+    - cron: '0 10 * * 5'  # 9 PM Sydney
+    - cron: '0 11 * * 5'  # 10 PM Sydney
+    # Saturday
+    - cron: '0 5 * * 6'   # 4 PM Sydney
+    - cron: '0 6 * * 6'   # 5 PM Sydney
+    - cron: '0 7 * * 6'   # 6 PM Sydney
+    - cron: '0 8 * * 6'   # 7 PM Sydney
+    - cron: '0 9 * * 6'   # 8 PM Sydney
+    - cron: '0 10 * * 6'  # 9 PM Sydney
+    - cron: '0 11 * * 6'  # 10 PM Sydney
+    # Sunday
+    - cron: '0 5 * * 0'   # 4 PM Sydney
+    - cron: '0 6 * * 0'   # 5 PM Sydney
+    - cron: '0 7 * * 0'   # 6 PM Sydney
+    - cron: '0 8 * * 0'   # 7 PM Sydney
+    - cron: '0 9 * * 0'   # 8 PM Sydney
+    - cron: '0 10 * * 0'  # 9 PM Sydney
+    - cron: '0 11 * * 0'  # 10 PM Sydney
+  workflow_dispatch: # Allows manual trigger from GitHub Actions tab
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read     # Required to checkout repository
+
+jobs:
+  check-schedule:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+
+    - name: Install dependencies
+      run: |
+        pip install requests google-auth google-auth-oauthlib google-auth-httplib2 google-api-python-client
+
+    # Restore state from cache
+    - name: Restore state from cache
+      id: cache-restore
+      uses: actions/cache/restore@v4
+      with:
+        path: |
+          previous_schedule.json
+          calendar_events.json
+          match_history.json
+          ladder_standings.json
+        key: schedule-state-${{ vars.SEASON_KEY }}-${{ github.run_number }}
+        restore-keys: |
+          schedule-state-${{ vars.SEASON_KEY }}-
+
+    - name: Verify loaded state
+      run: |
+        echo "Checking for state files..."
+        ls -lah *.json 2>/dev/null || echo "No JSON files found (first run or download failed)"
+        if [ -f previous_schedule.json ]; then
+          echo "✓ previous_schedule.json exists ($(wc -l < previous_schedule.json) lines)"
+        fi
+        if [ -f match_history.json ]; then
+          echo "✓ match_history.json exists ($(wc -l < match_history.json) lines)"
+        fi
+        if [ -f calendar_events.json ]; then
+          echo "✓ calendar_events.json exists ($(wc -l < calendar_events.json) lines)"
+        fi
+        if [ -f ladder_standings.json ]; then
+          echo "✓ ladder_standings.json exists ($(wc -l < ladder_standings.json) lines)"
+        fi
+
+    - name: Debug - Show API dates (optional)
+      continue-on-error: true
+      env:
+        DEBUG_DATES: ${{ vars.DEBUG_DATES }}
+        ASSEMBLESPORTS_BASE_URL: ${{ vars.ASSEMBLESPORTS_BASE_URL }}
+        ASSEMBLESPORTS_LIVE_URL: ${{ vars.ASSEMBLESPORTS_LIVE_URL }}
+        TIMEZONE: ${{ vars.TIMEZONE }}
+        TEAM_ID: ${{ vars.TEAM_ID }}
+        TEAM_NAME: ${{ vars.TEAM_NAME }}
+        CLUB_SLUG: ${{ vars.CLUB_SLUG }}
+      run: |
+        if [ "$DEBUG_DATES" = "true" ]; then
+          echo "DEBUG_DATES enabled - showing API data..."
+          python debug_match_dates.py || echo "Debug script failed (API may be rate-limiting)"
+        else
+          echo "DEBUG_DATES not enabled (set variable DEBUG_DATES=true to enable)"
+        fi
+
+    - name: Check schedule for changes and sync to calendar
+      env:
+        DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+        GOOGLE_CREDENTIALS_JSON: ${{ secrets.GOOGLE_CREDENTIALS_JSON }}
+        GOOGLE_CALENDAR_ID: ${{ secrets.GOOGLE_CALENDAR_ID }}
+        FORCE_CALENDAR_SYNC: ${{ secrets.FORCE_CALENDAR_SYNC }}
+        SEND_HEARTBEAT: ${{ secrets.SEND_HEARTBEAT }}
+        GITHUB_EVENT_NAME: ${{ github.event_name }}
+        # ── Season configuration ──────────────────────────────────────────
+        # Update these GitHub Variables (not Secrets) at the start of each
+        # new season. Defaults are set in the script if not provided.
+        #
+        # TEAM_ID:   Numeric team ID from AssembleSports (check the team URL).
+        # TEAM_NAME: Display name shown in calendar events & Discord messages.
+        # CLUB_SLUG: Club slug from the AssembleSports URL (e.g. "sydneycity").
+        # SEASON_KEY: Short key used for cache and artifact naming (e.g. "2026").
+        # ─────────────────────────────────────────────────────────────────
+        TEAM_ID: ${{ vars.TEAM_ID }}
+        TEAM_NAME: ${{ vars.TEAM_NAME }}
+        CLUB_SLUG: ${{ vars.CLUB_SLUG }}
+        ASSEMBLESPORTS_BASE_URL: ${{ vars.ASSEMBLESPORTS_BASE_URL }}
+        ASSEMBLESPORTS_LIVE_URL: ${{ vars.ASSEMBLESPORTS_LIVE_URL }}
+        TIMEZONE: ${{ vars.TIMEZONE }}
+        # Notification channel (default "discord" when unset). See README → Notifications.
+        NOTIFIER: ${{ vars.NOTIFIER }}
+      run: |
+        python check_schedule_with_ladder.py
+
+    - name: Verify files to upload
+      run: |
+        echo "Verifying files before upload..."
+        for file in previous_schedule.json calendar_events.json match_history.json ladder_standings.json; do
+          if [ -f "$file" ]; then
+            size=$(stat -f%z "$file" 2>/dev/null || stat -c%s "$file" 2>/dev/null)
+            lines=$(wc -l < "$file")
+            echo "✓ $file: $size bytes, $lines lines"
+          else
+            echo "✗ $file: MISSING"
+          fi
+        done
+
+    # Save state to cache for next run
+    - name: Save state to cache
+      uses: actions/cache/save@v4
+      with:
+        path: |
+          previous_schedule.json
+          calendar_events.json
+          match_history.json
+          ladder_standings.json
+        key: schedule-state-${{ vars.SEASON_KEY }}-${{ github.run_number }}
+
+    # Also upload as artifact for manual inspection/backup
+    - name: Upload state as artifact
+      continue-on-error: true
+      uses: actions/upload-artifact@v4
+      with:
+        name: schedule-data-${{ vars.SEASON_KEY }}
+        path: |
+          previous_schedule.json
+          calendar_events.json
+          match_history.json
+          ladder_standings.json
+        retention-days: 90
+        overwrite: true
