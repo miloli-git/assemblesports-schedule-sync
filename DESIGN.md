@@ -250,7 +250,10 @@ window. GitHub Actions does not support timezone-aware cron natively.
 
 ---
 
-## 8. Change Log
+## 8. Design Decision Log
+
+Rationale for design changes made during the public-release refactor. For consumer-facing
+release history, see [`CHANGELOG.md`](CHANGELOG.md).
 
 | Date | Change | Reason |
 |------|--------|--------|
@@ -265,4 +268,3 @@ window. GitHub Actions does not support timezone-aware cron natively.
 | 2026-03-24 | v1.2: replaced `datetime.utcnow()` with `datetime.now(timezone.utc)` | Deprecated since Python 3.12 |
 | 2026-03-24 | v1.2: hoisted `load_json_file` out of first-run loop | N redundant disk reads; no functional impact |
 | 2026-03-24 | v1.2: added `SEASON_KEY` to required Variables table | Cache/artifact key was hardcoded to `2026` in workflow |
-| 2026-03-24 | **OUTSTANDING**: workflow YAML not updated (MCP missing `workflow` OAuth scope) | Required changes: `DEBUG_DATES: ${{ vars.DEBUG_DATES }}` (was `secrets`); inject `ASSEMBLESPORTS_BASE_URL`, `ASSEMBLESPORTS_LIVE_URL`, `TIMEZONE` into main and debug steps; replace hardcoded `2026` cache key with `${{ vars.SEASON_KEY }}`. Edit `.github/workflows/schedule-checker-enhanced.yml` manually via GitHub web UI. |
