@@ -44,7 +44,7 @@ AssembleSports API → check_schedule_with_ladder.py → Google Calendar (create
 | `.github/workflows/schedule-checker-enhanced.yml` | Scheduler, runtime, secret/variable injection, cache restore+save. The script does nothing on its own. |
 | `cleanup_duplicates.py` | Manual local recovery tool — **intentionally interactive** (`input()` gate before deleting). Not invoked by CI. |
 | `debug_match_dates.py` | Read-only date debugger. Invoked by the workflow only when `DEBUG_DATES=true`. |
-| `DESIGN.md` | Living design doc — **update it when design decisions change** (it has a Change Log section). Read it before non-trivial changes. |
+| `DESIGN.md` | Living design doc — **update it when design decisions change** (it has a Design Decision Log section). Read it before non-trivial changes. |
 
 ### `main()` execution flow
 Fetch team schedule → auto-detect competition URL from match data → fetch all competition matches → load 4 prior-state JSON files → diff for new results / ladder changes / schedule changes → sync Calendar → post Discord → save state. State files are read at start and written at end of every run.
@@ -83,10 +83,6 @@ See `SEASON_SETUP.md` for the season-rollover procedure and `DESIGN.md` §4 for 
 - Use `datetime.now(timezone.utc)`, not the deprecated `datetime.utcnow()`.
 - **`FORCE_CALENDAR_SYNC` and `SEND_HEARTBEAT` secrets are injected but not yet consumed** by the script (reserved).
 
-## Outstanding issue (from DESIGN.md §7/§8)
+## Config plumbing
 
-The workflow YAML was previously un-updatable via tooling lacking the `workflow` OAuth scope, leaving these as intended-but-verify items. **Confirm against the current `.github/workflows/schedule-checker-enhanced.yml` before relying on `DESIGN.md`'s claim** — as of this writing the YAML already reads `DEBUG_DATES`/`ASSEMBLESPORTS_*`/`TIMEZONE` from `vars` and uses `${{ vars.SEASON_KEY }}` for the cache key, so the issue appears resolved. If you change config plumbing, keep the script, workflow `env:` blocks, `DESIGN.md`, and `SEASON_SETUP.md` in sync.
-
-## Branch policy
-
-Develop on `claude/claude-md-docs-9eeI2`. Do not push to `main` without explicit permission. Do not create PRs unless asked.
+The workflow `env:` blocks read all non-secret config (`DEBUG_DATES`, `ASSEMBLESPORTS_BASE_URL`, `ASSEMBLESPORTS_LIVE_URL`, `TIMEZONE`, `TEAM_ID`, `TEAM_NAME`, `CLUB_SLUG`, `NOTIFIER`) from GitHub **Variables** (`vars`), and credentials (`DISCORD_WEBHOOK_URL`, `GOOGLE_*`) from **Secrets**. The cache and artifact keys use `${{ vars.SEASON_KEY }}`. If you change config plumbing, keep the script, the workflow `env:` blocks, `DESIGN.md`, and `SEASON_SETUP.md` in sync.

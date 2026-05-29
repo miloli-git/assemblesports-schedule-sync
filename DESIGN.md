@@ -246,7 +246,6 @@ window. GitHub Actions does not support timezone-aware cron natively.
 | `cleanup_duplicates.py` requires interactive terminal | Informational | By design -- see Section 5.7. |
 | Push-to-main trigger runs outside game-day hours | Informational | Useful during setup; remove if unwanted. |
 | Cancellation + simultaneous time/venue correction | Low | Event updated rather than deleted. Not expected in practice. |
-| Workflow YAML could not be updated via MCP (missing `workflow` OAuth scope) | **Outstanding** | Requires manual edit. Affects: `DEBUG_DATES` reads from `secrets` not `vars`; `ASSEMBLESPORTS_BASE_URL`, `ASSEMBLESPORTS_LIVE_URL`, `TIMEZONE` not injected into workflow steps. See Section 8 for intended changes. |
 
 ---
 
