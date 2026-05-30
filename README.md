@@ -53,14 +53,24 @@ Settings -> Secrets and variables -> Actions -> **Variables**
 | `TEAM_ID` | Your team's numeric ID from the AssembleSports URL |
 | `TEAM_NAME` | Your team's display name (used in calendar events and Discord) |
 | `CLUB_SLUG` | Your club's URL slug (found in `/c/club/<CLUB_SLUG>/` in the site URL) |
+| `SEASON_KEY` | Short key for cache/artifact naming, e.g. `2026` (bump at season start) |
 
 **Finding your Team ID and Club Slug:** navigate to your team page on the live site.
 The URL pattern is: `https://live.assemblesports.io/c/club/<CLUB_SLUG>/teams/<TEAM_ID>`
 
+> **The workflow stays dormant until it is initialised.** Until `TEAM_ID`,
+> `TEAM_NAME`, `CLUB_SLUG`, and `SEASON_KEY` are all set, the scheduled job is
+> **skipped** rather than run — so it never errors and never emails you a failed
+> run. Setting these four Variables *is* the initialisation step; once they
+> exist the cron schedule activates on its own, with no edit to the workflow
+> file. (The script also fails loudly with a clear message if you somehow run it
+> with these unset.)
+
 ### 4. Run it
 
-The workflow runs automatically (Thursday-Sunday, 05:00-11:00 UTC). To test immediately,
-go to **Actions -> Oztag Schedule Checker with Calendar Sync -> Run workflow**.
+Once the Variables above are set, the workflow runs automatically (Thursday-Sunday,
+05:00-11:00 UTC). To test immediately, go to
+**Actions -> Oztag Schedule Checker with Calendar Sync -> Run workflow**.
 
 On the first run it creates all calendar events and sends an initialisation notification.
 

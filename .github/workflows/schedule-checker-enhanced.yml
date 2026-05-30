@@ -50,6 +50,21 @@ jobs:
   check-schedule:
     runs-on: ubuntu-latest
 
+    # ── Initialisation gate ──────────────────────────────────────────────────
+    # Skip (don't fail) until the repo has been initialised with the required
+    # configuration Variables. GitHub emails the repo owner whenever a
+    # *scheduled* run fails; a skipped job sends nothing. The script itself
+    # raises EnvironmentError at startup when TEAM_ID / TEAM_NAME / CLUB_SLUG
+    # are unset, so without this gate every cron run fails and notifies.
+    # Once these Variables (and SEASON_KEY) are set under
+    # Settings → Secrets and variables → Actions → Variables, scheduled runs
+    # activate automatically — no edit to this file required.
+    if: >-
+      ${{ vars.TEAM_ID != '' &&
+          vars.TEAM_NAME != '' &&
+          vars.CLUB_SLUG != '' &&
+          vars.SEASON_KEY != '' }}
+
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4

@@ -1,6 +1,6 @@
 # Design Document: AssembleSports Schedule Tracker
 
-> **Version:** 1.2
+> **Version:** 1.3
 > **Status:** Living document -- update this file when design decisions change.
 
 ---
@@ -37,6 +37,9 @@ check_schedule_with_ladder.py
 | `schedule` (cron) | Hourly Thu-Sun, 05:00-11:00 UTC | Primary trigger -- see Section 6 for DST details |
 | `workflow_dispatch` | Manually from the Actions tab | For testing and forced runs |
 | `push` to `main` | On every commit to main | Useful during setup; remove the push trigger if unwanted |
+
+All triggers are subject to the **initialisation gate** (Section 5.11): the job is
+skipped until the required configuration Variables exist.
 
 ### Components
 
@@ -214,6 +217,33 @@ Alternative considered: a full multi-channel matrix (Slack, SMS, webhook) up fro
 more surface to maintain and test for channels no current user needs. The seam makes adding one
 cheap when someone does.
 
+### 5.11 Workflow is gated on initialisation; uninitialised runs skip, not fail
+
+The script fails loudly when its required Variables are unset (Section 4.1) — the right behaviour
+for a *misconfigured* deployment. But it is also the wrong behaviour for a deployment that simply
+hasn't been configured *yet*: a freshly forked repo with the cron schedule live but no Variables
+set produces a failed scheduled run every hour on game days, and GitHub emails the repo owner on
+every scheduled-workflow failure. The result is an email storm that signals nothing actionable.
+
+The fix is a job-level `if:` gate in the workflow that runs the job only when
+`TEAM_ID`, `TEAM_NAME`, `CLUB_SLUG`, and `SEASON_KEY` are all non-empty. When they are not, the
+job is **skipped** — skipped runs send no failure notification. Setting those four Variables is
+therefore the single initialisation action; the schedule activates automatically with no edit to
+the workflow file.
+
+Design points:
+- **Gate on Variables, not Secrets.** GitHub does not expose the `secrets` context to a job-level
+  `if:`, and the script's hard-fail is on these Variables anyway. A repo with Variables set but
+  Secrets missing is genuinely-but-incompletely initialised, and *should* fail loudly at the
+  Calendar/Discord step — consistent with the fail-loud philosophy of Section 4.1.
+- **The startup `EnvironmentError` is kept, not replaced.** The gate prevents the no-config case
+  from ever reaching the script on a schedule; the in-script check remains the backstop for local
+  runs and for genuinely partial/wrong configuration.
+
+Alternative considered: removing the `schedule:` trigger until setup is done. Rejected — it makes
+initialisation a two-step dance (set Variables *and* re-add the cron), and the re-add is easy to
+forget. The gate keeps the schedule declared but inert until it can succeed.
+
 ---
 
 ## 6. Polling Schedule
@@ -237,6 +267,7 @@ window. GitHub Actions does not support timezone-aware cron natively.
 | Cache eviction (7-day gap or 10 GB repo limit) | Low | Duplicate detection prevents double-booking on first run. |
 | `cleanup_duplicates.py` requires interactive terminal | Informational | By design -- see Section 5.7. |
 | Push-to-main trigger runs outside game-day hours | Informational | Useful during setup; remove if unwanted. |
+| Gate keys on Variables, not Secrets | Informational | Variables-set-but-Secrets-missing still fails loudly at the Calendar/Discord step. See Section 5.11. |
 | Cancellation + simultaneous time/venue correction | Low | Event updated rather than deleted. Not expected in practice. |
 
 ---
@@ -259,3 +290,4 @@ release history, see [`CHANGELOG.md`](CHANGELOG.md).
 | 2026-03-24 | v1.2: replaced `datetime.utcnow()` with `datetime.now(timezone.utc)` | Deprecated since Python 3.12 |
 | 2026-03-24 | v1.2: hoisted `load_json_file` out of first-run loop | N redundant disk reads; no functional impact |
 | 2026-03-24 | v1.2: added `SEASON_KEY` to required Variables table | Cache/artifact key was hardcoded to `2026` in workflow |
+| 2026-05-30 | v1.3: gated the workflow job on required config Variables (skip when uninitialised) | Uninitialised forks failed every scheduled run, emailing the repo owner hourly on game days |

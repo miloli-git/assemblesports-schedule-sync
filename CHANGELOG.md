@@ -5,6 +5,11 @@ All notable changes to this project are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Changed
+- The scheduled workflow is now **gated on initialisation**: the job only runs once `TEAM_ID`, `TEAM_NAME`, `CLUB_SLUG`, and `SEASON_KEY` are all set as GitHub Variables. Before that it is *skipped* rather than failed, so a freshly forked but un-configured repo no longer fails every scheduled run and emails the owner an hourly stream of failure notifications on game days. Setting the four Variables activates the schedule automatically — no workflow edit required. See DESIGN.md §5.11.
+
 ## [1.0.0] - 2026-03-24
 
 Initial public release.

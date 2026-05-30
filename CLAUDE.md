@@ -63,6 +63,8 @@ Cache is ephemeral by design. If evicted (7-day idle, or repo cache > 10 GB), th
 
 All config comes from environment variables (GitHub Actions **Variables** for non-secrets, **Secrets** for credentials). The script raises `EnvironmentError` at startup if `TEAM_ID`, `TEAM_NAME`, or `CLUB_SLUG` are unset — **no silent defaults** for these.
 
+**Initialisation gate:** the workflow job carries a job-level `if:` that runs only when `TEAM_ID`, `TEAM_NAME`, `CLUB_SLUG`, and `SEASON_KEY` are all non-empty Variables. Until then scheduled runs are *skipped* (not failed), so an un-initialised fork doesn't email the owner a failure on every cron tick. The in-script `EnvironmentError` is kept as the backstop. See `DESIGN.md` §5.11; if you touch the gate, keep the workflow, `DESIGN.md`, `README.md`, and `SEASON_SETUP.md` in sync.
+
 **Required Variables:** `TEAM_ID`, `TEAM_NAME`, `CLUB_SLUG`, `SEASON_KEY`
 **Required Secrets:** `DISCORD_WEBHOOK_URL`, `GOOGLE_CREDENTIALS_JSON`, `GOOGLE_CALENDAR_ID`
 **Optional Variables (default to OzTag AU):** `ASSEMBLESPORTS_BASE_URL`, `ASSEMBLESPORTS_LIVE_URL`, `TIMEZONE` (default `Australia/Sydney`), `NOTIFIER` (default `discord`), `DEBUG_DATES`

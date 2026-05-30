@@ -14,6 +14,12 @@ Set these as GitHub Actions Variables:
 
 The script raises `EnvironmentError` at startup if `TEAM_ID`, `TEAM_NAME`, or `CLUB_SLUG` are missing.
 
+> **The workflow will not run at all until all four of these Variables are set.**
+> The job is gated on `TEAM_ID`, `TEAM_NAME`, `CLUB_SLUG`, and `SEASON_KEY` being
+> non-empty; until then scheduled runs are *skipped* (not failed), so an
+> un-initialised repo never emails you failed-run notifications. Setting these
+> Variables is what switches the schedule on — no workflow edit needed.
+
 ## Optional Configuration
 
 Leave unset to use OzTag Australia defaults.
